@@ -1,5 +1,5 @@
 // Require all the necessary packages
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -30,6 +30,23 @@ const server = async () => {
             const query = {};
             const cursor = Services.find(query);
             const services = await cursor.toArray();
+            
+            res.send(services)
+        })
+
+        // get a single service by id
+        app.get("/services/:id", async(req, res) => {
+            const id = req.params.id
+            const query = {_id: ObjectId(id)};
+            const service = await Services.findOne(query);
+            
+            res.send(service)
+        })
+        // create a route for a limited data
+        app.get("/limited-service", async(req, res) => {
+            const query = {};
+            const cursor = Services.find(query);
+            const services = await cursor.limit(3).toArray();
             
             res.send(services)
         })
