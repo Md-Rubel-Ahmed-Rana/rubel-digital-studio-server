@@ -65,11 +65,12 @@ const server = async () => {
             const result = await Reviews.insertOne(review)
             res.send(result)
         })
-        // create a get route to get all the reviews from client-side
+        // create a get route to get all the reviews for a user from client-side
         app.get("/reviews", async (req, res) => {
-            const query = {}
+            const email = req.query.email;
+            const query = {email: email}
             const cursor =  Reviews.find(query);
-            const reviews = await cursor.toArray()
+            const reviews = await cursor.toArray();
             res.send(reviews)
         })
 
