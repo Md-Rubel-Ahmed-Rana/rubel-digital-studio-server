@@ -26,13 +26,20 @@ const server = async () => {
         const Services = client.db("studioData").collection("services");
         const Reviews = client.db("studioData").collection("reviews");
 
-        // create a get route to get all the services
+        // create a get route to get all the services from client-side
         app.get("/services", async(req, res) => {
             const query = {};
             const cursor = Services.find(query);
             const services = await cursor.toArray();
             
             res.send(services)
+        })
+        // create a post route to insert service in database
+        app.post("/services", async(req, res) => {
+            const data = req.body;
+            const service = await Services.insertOne(data)
+            console.log(service);
+            res.send(service)
         })
 
         // get a single service by id
@@ -57,6 +64,21 @@ const server = async () => {
             const review = req.body;
             const result = await Reviews.insertOne(review)
             res.send(result)
+        })
+        // create a get route to get all the reviews from client-side
+        app.get("/reviews", async (req, res) => {
+            const query = {}
+            const cursor =  Reviews.find(query);
+            const reviews = await cursor.toArray()
+            res.send(reviews)
+        })
+
+        // delete a review from database
+        app.delete("/reviews/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)}
+            const review = await Reviews.deleteOne(query);
+            res.send(review)
         })
     } catch (error) {
         console.log(error);
