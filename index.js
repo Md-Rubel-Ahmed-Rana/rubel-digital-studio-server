@@ -68,10 +68,44 @@ const server = async () => {
         // create a get route to get all the reviews for a user from client-side
         app.get("/reviews", async (req, res) => {
             const email = req.query.email;
-            const query = {email: email}
+            const photo = req.query.photo;
+            let query = {}
+            if (email){
+                query = { email: email }
+            } else if (photo){
+                query = { photo: photo }
+            }
             const cursor =  Reviews.find(query);
             const reviews = await cursor.toArray();
             res.send(reviews)
+        })
+
+        // create a dymanic route to load a single review
+        app.get("/reviews/:id", async(req,res) => {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const review = await Reviews.findOne(query);
+            res.send(review)
+        })
+
+        // update user review
+        app.put("/reviews/:id", async(req, res) => {
+            const review = req.body;
+            console.log( "In body" ,review);
+
+            const id = req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const option = { upsert: true };
+            const updatedReview = {
+                $set: {
+                    customer_review: review.customer_review
+                }
+            }
+            const result = await Reviews.updateOne(filter, updatedReview, option);
+
+            console.log("In result", result);
+
+            res.send(result)
         })
 
         // delete a review from database
