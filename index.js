@@ -2,6 +2,7 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken")
 const app = express();
 require("dotenv").config();
 
@@ -60,10 +61,18 @@ const server = async () => {
         // add user reviews to database
         app.post("/reviews", async (req, res) => {
             const review = req.body;
-            console.log(review);
             const result = await Reviews.insertOne(review);
             res.send(result)
         })
+
+        // // create a jwt route to generate json web token;
+        // app.post("/jwt", async (req, res) => {
+        //     const user = req.body;
+        //     const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN);
+        //     console.log(token);
+        //     res.send({ token })
+        // })
+
         // create a get route to get all the reviews for a user from client-side
         app.get("/reviews", async (req, res) => {
             const email = req.query.email;
@@ -88,20 +97,19 @@ const server = async () => {
         })
 
         // update user review
-        app.put("/reviews/:id", async(req, res) => {
+        app.put("/reviews/:id", async (req, res) => {
             const review = req.body;
-            console.log( "In body" ,review);
-
             const id = req.params.id;
-            const filter = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
+
             const option = { upsert: true };
-            const updatedReview = {
+            const updatedOrder = {
                 $set: {
-                    customer_review: review.customer_review
+                    customer_review: review.customer_review,
                 }
             }
-            const result = await Reviews.updateOne(filter, updatedReview, option);
-
+            const result = await Reviews.updateOne(query, updatedOrder, option);
+            console.log(result);
             res.send(result)
         })
 
