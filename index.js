@@ -31,14 +31,12 @@ const server = async () => {
             const query = {};
             const cursor = Services.find(query);
             const services = await cursor.toArray();
-            
             res.send(services)
         })
         // create a post route to insert service in database
         app.post("/services", async(req, res) => {
             const data = req.body;
             const service = await Services.insertOne(data)
-            console.log(service);
             res.send(service)
         })
 
@@ -62,7 +60,8 @@ const server = async () => {
         // add user reviews to database
         app.post("/reviews", async (req, res) => {
             const review = req.body;
-            const result = await Reviews.insertOne(review)
+            console.log(review);
+            const result = await Reviews.insertOne(review);
             res.send(result)
         })
         // create a get route to get all the reviews for a user from client-side
@@ -75,7 +74,7 @@ const server = async () => {
             } else if (photo){
                 query = { photo: photo }
             }
-            const cursor =  Reviews.find(query);
+            const cursor =  Reviews.find(query).sort({time: -1});
             const reviews = await cursor.toArray();
             res.send(reviews)
         })
@@ -102,8 +101,6 @@ const server = async () => {
                 }
             }
             const result = await Reviews.updateOne(filter, updatedReview, option);
-
-            console.log("In result", result);
 
             res.send(result)
         })
