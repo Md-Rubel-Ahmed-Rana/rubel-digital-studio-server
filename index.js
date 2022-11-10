@@ -2,8 +2,8 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require("express");
 const cors = require("cors");
-const jwt = require("jsonwebtoken")
 const app = express();
+const jwt = require("jsonwebtoken")
 require("dotenv").config();
 
 // Setup middleware
@@ -21,11 +21,37 @@ app.get("/", (req, res) => {
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.n72f5gi.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+
+const verifyJWT = async(req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+        return res.status(403).send({mesaage: "unauthorized access"})
+    }
+    const token = authHeader.split(" ")[1]
+    jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
+        if(err){
+            return res.status(403).send({ mesaage: "unauthorized access" })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
+
+
 // Server setup
 const server = async () => {
     try {
         const Services = client.db("studioData").collection("services");
         const Reviews = client.db("studioData").collection("reviews");
+
+
+        // create a jwt token and send it to client-side
+        app.post("/jwt", async(req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN);
+            res.send({token})
+        })
 
         // create a get route to get all the services from client-side
         app.get("/services", async(req, res) => {
@@ -34,6 +60,7 @@ const server = async () => {
             const services = await cursor.toArray();
             res.send(services)
         })
+
         // create a post route to insert service in database
         app.post("/services", async(req, res) => {
             const data = req.body;
@@ -46,15 +73,14 @@ const server = async () => {
             const id = req.params.id
             const query = {_id: ObjectId(id)};
             const service = await Services.findOne(query);
-            
             res.send(service)
         })
-        // create a route for a limited data
+
+        // create a route for a limited data (3)
         app.get("/limited-service", async(req, res) => {
             const query = {};
             const cursor = Services.find(query);
             const services = await cursor.limit(3).toArray();
-            
             res.send(services)
         })
 
@@ -65,24 +91,15 @@ const server = async () => {
             res.send(result)
         })
 
-        // // create a jwt route to generate json web token;
-        // app.post("/jwt", async (req, res) => {
-        //     const user = req.body;
-        //     const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN);
-        //     console.log(token);
-        //     res.send({ token })
-        // })
-
         // create a get route to get all the reviews for a user from client-side
-        app.get("/reviews", async (req, res) => {
-            const email = req.query.email;
-            const photo = req.query.photo;
-            let query = {}
-            if (email){
-                query = { email: email }
-            } else if (photo){
-                query = { photo: photo }
+        app.get("/reviewsByEmail", verifyJWT,  async (req, res) => {
+            const decoded = req.decoded;
+            if (decoded.email !== req.query.email){
+                return res.status(403).send({ mesaage: "unauthorized access" })
             }
+
+            const email = req.query.email;
+            const query = { email: email }
             const cursor =  Reviews.find(query).sort({time: -1});
             const reviews = await cursor.toArray();
             res.send(reviews)
@@ -91,9 +108,18 @@ const server = async () => {
         // create a dymanic route to load a single review
         app.get("/reviews/:id", async(req,res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
-            const review = await Reviews.findOne(query);
+            console.log(id);
+            const query = { _id: ObjectId(id) }
+            const review = await  Reviews.findOne(query);
             res.send(review)
+        })
+        // create a dymanic route to load  review
+        app.get("/reviewsById", async(req,res) => {
+            const review_id = req.query.review_id;
+            const query = { review_id: review_id }
+            const cursor =  Reviews.find(query);
+            const reviews = await cursor.toArray()
+            res.send(reviews)
         })
 
         // update user review
@@ -109,7 +135,6 @@ const server = async () => {
                 }
             }
             const result = await Reviews.updateOne(query, updatedOrder, option);
-            console.log(result);
             res.send(result)
         })
 
