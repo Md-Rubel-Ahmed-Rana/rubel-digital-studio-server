@@ -45,7 +45,6 @@ const server = async () => {
         const Services = client.db("studioData").collection("services");
         const Reviews = client.db("studioData").collection("reviews");
 
-
         // create a jwt token and send it to client-side
         app.post("/jwt", async(req, res) => {
             const user = req.body;
@@ -97,7 +96,6 @@ const server = async () => {
             if (decoded.email !== req.query.email){
                 return res.status(403).send({ mesaage: "unauthorized access" })
             }
-
             const email = req.query.email;
             const query = { email: email }
             const cursor =  Reviews.find(query).sort({time: -1});
@@ -127,7 +125,6 @@ const server = async () => {
             const review = req.body;
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-
             const option = { upsert: true };
             const updatedOrder = {
                 $set: {
